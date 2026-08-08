@@ -1,4 +1,4 @@
-const CACHE_NAME = "herbier-shell-v1";
+const CACHE_NAME = "herbier-shell-v2";
 const APP_SHELL = [
   "./index.html",
   "./manifest.json",
@@ -31,7 +31,21 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // App shell : cache d'abord, réseau en secours.
+  // Le document HTML : réseau d'abord (pour recevoir les mises à jour tout de suite), cache en secours si hors-ligne.
+  if (event.request.mode === "navigate" || url.pathname.endsWith(".html")) {
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
+          return res;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Le reste de l'app shell (icônes, manifest) : cache d'abord, réseau en secours.
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return (

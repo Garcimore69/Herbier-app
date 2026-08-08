@@ -255,6 +255,7 @@
     margin: 16px 0;
   }
   .notice.visible{ display:block; }
+  .notice{ white-space: pre-wrap; word-break: break-word; }
   .notice.error{ background: #F4E3DC; color: var(--error); border:1px solid #E4B7A6; }
   .notice.info{ background: #EAE7D4; color: var(--ink-soft); border:1px solid var(--line); }
 
@@ -628,14 +629,10 @@
       const url = `https://my-api.plantnet.org/v2/identify/${PROJECT}?lang=fr&nb-results=3&api-key=${encodeURIComponent(apiKey)}`;
       const res = await fetch(url, { method: 'POST', body: formData });
 
-      if(res.status === 401 || res.status === 403){
-        throw { kind: 'auth' };
-      }
-      if(res.status === 429){
-        throw { kind: 'quota' };
-      }
       if(!res.ok){
-        throw { kind: 'server', status: res.status };
+        let detail = "";
+        try { detail = await res.text(); } catch(e){ /* rien à lire */ }
+        throw { kind: 'http', status: res.status, detail: detail };
       }
 
       const data = await res.json();
@@ -650,19 +647,23 @@
   }
 
   function handleError(err){
-    if(err && err.kind === 'auth'){
-      showNotice(els.errorNotice, "Clé API refusée. Vérifiez qu'elle est correctement copiée dans les réglages.");
+    if(err && err.kind === 'http'){
+      let msg;
+      if(err.status === 429){
+        msg = "Quota quotidien gratuit atteint (500 identifications/jour). Réessayez demain.";
+      } else if(err.status === 401 || err.status === 403){
+        msg = "Accès refusé par Pl@ntNet (code " + err.status + ").";
+      } else {
+        msg = "Le service a répondu avec une erreur (code " + err.status + ").";
+      }
+      if(err.detail){
+        msg += "\nDétail technique : " + err.detail.slice(0, 300);
+      }
+      showNotice(els.errorNotice, msg);
       return;
     }
-    if(err && err.kind === 'quota'){
-      showNotice(els.errorNotice, "Quota quotidien gratuit atteint (500 identifications/jour). Réessayez demain.");
-      return;
-    }
-    if(err && err.kind === 'server'){
-      showNotice(els.errorNotice, "Le service d'identification a répondu avec une erreur (" + err.status + "). Réessayez dans un instant.");
-      return;
-    }
-    showNotice(els.errorNotice, "Impossible de contacter le service d'identification. Vérifiez votre connexion internet.");
+    const msg = (err && err.message) ? (" (" + err.message + ")") : "";
+    showNotice(els.errorNotice, "Impossible de contacter le service d'identification. Vérifiez votre connexion internet." + msg);
   }
 
   function renderResults(data){
