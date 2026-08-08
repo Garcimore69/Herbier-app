@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#2F4B3C" />
+<title>Herbier — Identification de plantes</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --paper: #EDEBDD;
+    --surface: #FBFAF3;
+    --ink: #23321F;
+    --ink-soft: #52604C;
+    --muted: #7A7362;
+    --moss: #3F5B3A;
+    --moss-dark: #2F4B3C;
+    --ochre: #A8763E;
+    --line: #D8D2BE;
+    --error: #A23E2A;
+    --radius: 18px;
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Texture de fond très légère, façon papier */
+  body{
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(63,91,58,0.05), transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(168,118,62,0.06), transparent 45%);
+  }
+
+  header{
+    position: sticky;
+    top:0;
+    z-index: 10;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: max(14px, env(safe-area-inset-top)) 18px 12px;
+    background: var(--moss-dark);
+    color: var(--paper);
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+  }
+  .brand-mark{
+    font-family:'Fraunces', serif;
+    font-style: italic;
+    font-weight:600;
+    font-size: 22px;
+    letter-spacing: 0.2px;
+  }
+  .brand-sub{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #C9CDBB;
+  }
+  .icon-btn{
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.25);
+    color: var(--paper);
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .icon-btn:active{ background: rgba(255,255,255,0.12); }
+
+  main{
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 20px 18px 48px;
+  }
+
+  .hero-text{
+    margin: 6px 2px 20px;
+  }
+  .hero-text h1{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 26px;
+    line-height:1.25;
+    margin: 0 0 6px;
+  }
+  .hero-text p{
+    margin:0;
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    line-height:1.5;
+  }
+
+  /* Cadre de prévisualisation, façon planche d'herbier */
+  .specimen-frame{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 18px;
+    display:none;
+  }
+  .specimen-frame.visible{ display:block; }
+  .specimen-frame img{
+    width:100%;
+    display:block;
+    border-radius: 10px;
+    max-height: 320px;
+    object-fit: cover;
+    background: var(--paper);
+  }
+  .specimen-caption{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top: 10px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+  }
+  .specimen-caption button{
+    background:none;
+    border:none;
+    color: var(--ochre);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-decoration: underline;
+    cursor:pointer;
+    padding:4px;
+  }
+
+  /* Boutons de capture */
+  .capture-row{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .capture-btn{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap: 8px;
+    padding: 22px 10px;
+    border-radius: var(--radius);
+    border: none;
+    cursor:pointer;
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size: 14px;
+    transition: transform 0.08s ease;
+  }
+  .capture-btn:active{ transform: scale(0.97); }
+  .capture-btn.primary{
+    background: var(--moss);
+    color: var(--paper);
+  }
+  .capture-btn.secondary{
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line);
+  }
+  .capture-btn svg{ width:26px; height:26px; }
+
+  #cameraInput, #galleryInput{
+    display:none;
+  }
+
+  /* Bouton d'analyse */
+  .analyze-btn{
+    width:100%;
+    margin-top: 4px;
+    padding: 15px;
+    border-radius: 14px;
+    border:none;
+    background: var(--ochre);
+    color: #FFF9EE;
+    font-family:'Inter', sans-serif;
+    font-weight:700;
+    font-size: 15px;
+    cursor:pointer;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+  }
+  .analyze-btn.visible{ display:flex; }
+  .analyze-btn:disabled{ opacity:0.6; }
+
+  /* Etat de chargement : pousse qui grandit */
+  .loading-wrap{
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    gap: 10px;
+    padding: 34px 0 10px;
+  }
+  .loading-wrap.visible{ display:flex; }
+  .loading-wrap p{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    letter-spacing: 0.04em;
+  }
+  .sprout path{
+    fill:none;
+    stroke: var(--moss);
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 140;
+    stroke-dashoffset: 140;
+    animation: draw 1.4s ease-in-out infinite;
+  }
+  .sprout path.stem{ animation-delay: 0s; }
+  .sprout path.leafL{ animation-delay: 0.35s; }
+  .sprout path.leafR{ animation-delay: 0.55s; }
+  @keyframes draw{
+    0%{ stroke-dashoffset: 140; opacity:0.3;}
+    55%{ stroke-dashoffset: 0; opacity:1;}
+    100%{ stroke-dashoffset: 0; opacity:1;}
+  }
+
+  /* Message d'erreur / info */
+  .notice{
+    display:none;
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+    line-height:1.5;
+    margin: 16px 0;
+  }
+  .notice.visible{ display:block; }
+  .notice.error{ background: #F4E3DC; color: var(--error); border:1px solid #E4B7A6; }
+  .notice.info{ background: #EAE7D4; color: var(--ink-soft); border:1px solid var(--line); }
+
+  /* Résultats */
+  .results{
+    margin-top: 22px;
+    display:flex;
+    flex-direction:column;
+    gap: 14px;
+  }
+  .results-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 0 0 -2px 4px;
+  }
+
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    display:grid;
+    grid-template-columns: 68px 1fr;
+    gap: 14px;
+    animation: rise 0.35s ease both;
+  }
+  .card:first-child{
+    border-left: 3px solid var(--moss);
+  }
+  @keyframes rise{
+    from{ opacity:0; transform: translateY(8px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+  .card-thumb{
+    width:68px; height:68px;
+    border-radius: 10px;
+    background: var(--paper) center/cover no-repeat;
+    border: 1px solid var(--line);
+    flex-shrink:0;
+  }
+  .card-body{ min-width:0; }
+  .rank-tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--ochre);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .sci-name{
+    font-family:'Fraunces', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 18px;
+    line-height:1.25;
+    margin: 0 0 2px;
+    overflow-wrap: anywhere;
+  }
+  .common-name{
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin: 0 0 8px;
+  }
+  .meta-row{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .score-bar{
+    flex:1;
+    height: 5px;
+    background: var(--line);
+    border-radius: 3px;
+    overflow:hidden;
+  }
+  .score-bar > span{
+    display:block;
+    height:100%;
+    background: var(--moss);
+  }
+  .family-tag{
+    display:inline-block;
+    margin-top: 8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--moss-dark);
+    background: #E4E7D6;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+
+  /* Modal réglages */
+  .modal-backdrop{
+    position: fixed; inset:0;
+    background: rgba(20,26,17,0.55);
+    display:none;
+    align-items:flex-end;
+    z-index: 30;
+  }
+  .modal-backdrop.visible{ display:flex; }
+  .modal{
+    background: var(--surface);
+    width:100%;
+    border-radius: 20px 20px 0 0;
+    padding: 22px 20px max(22px, env(safe-area-inset-bottom));
+  }
+  .modal h2{
+    font-family:'Fraunces', serif;
+    font-size: 19px;
+    margin: 0 0 4px;
+  }
+  .modal p.hint{
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    line-height:1.5;
+    margin: 0 0 16px;
+  }
+  .modal label{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .modal input[type="text"]{
+    width:100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .modal a{ color: var(--moss); }
+  .modal-actions{
+    display:flex;
+    gap: 10px;
+  }
+  .modal-actions button{
+    flex:1;
+    padding: 13px;
+    border-radius: 12px;
+    border:none;
+    font-weight:600;
+    font-size: 14px;
+    cursor:pointer;
+  }
+  .btn-save{ background: var(--moss); color: var(--paper); }
+  .btn-cancel{ background: transparent; color: var(--ink-soft); border: 1px solid var(--line) !important; }
+
+  footer{
+    text-align:center;
+    padding: 10px 20px 30px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--muted);
+    line-height:1.6;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="brand-mark">Herbier</span>
+    <span class="brand-sub">Identification photo</span>
+  </div>
+  <button class="icon-btn" id="settingsBtn" aria-label="Réglages">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
+      <circle cx="12" cy="12" r="3.2"/>
+      <path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9c.5.4 1.1.75 1.7 1l.4 2.5h4l.4-2.5c.6-.25 1.2-.6 1.7-1l2.3.9 2-3.4-2-1.5Z"/>
+    </svg>
+  </button>
+</header>
+
+<main>
+  <div class="hero-text">
+    <h1>Photographiez une plante, obtenez son nom.</h1>
+    <p>Aucune base de données stockée sur votre téléphone — chaque photo est envoyée à l'identificateur botanique Pl@ntNet, en direct.</p>
+  </div>
+
+  <div class="specimen-frame" id="previewFrame">
+    <img id="previewImg" alt="Photo sélectionnée" />
+    <div class="specimen-caption">
+      <span id="fileMeta">photo.jpg</span>
+      <button id="clearBtn" type="button">retirer</button>
+    </div>
+  </div>
+
+  <div class="capture-row">
+    <button class="capture-btn primary" id="cameraBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7H8l1-2h6l1 2h2.5A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5v-9Z"/><circle cx="12" cy="13" r="3.4"/></svg>
+      Prendre une photo
+    </button>
+    <button class="capture-btn secondary" id="galleryBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M20 15.5 15 10l-4 4.5-2-1.8L4 17"/></svg>
+      Depuis la galerie
+    </button>
+  </div>
+
+  <input type="file" id="cameraInput" accept="image/*" capture="environment" />
+  <input type="file" id="galleryInput" accept="image/*" />
+
+  <button class="analyze-btn" id="analyzeBtn" type="button">Identifier cette plante</button>
+
+  <div class="loading-wrap" id="loadingWrap">
+    <svg class="sprout" viewBox="0 0 60 60" width="52" height="52">
+      <path class="stem" d="M30 52 L30 26"/>
+      <path class="leafL" d="M30 34 C18 34 14 24 16 14 C26 16 32 22 30 34 Z"/>
+      <path class="leafR" d="M30 26 C42 26 46 16 44 8 C34 10 28 16 30 26 Z"/>
+    </svg>
+    <p>Analyse botanique en cours…</p>
+  </div>
+
+  <div class="notice error" id="errorNotice"></div>
+  <div class="notice info" id="infoNotice"></div>
+
+  <div class="results" id="results"></div>
+</main>
+
+<footer>
+  Résultats fournis par l'API Pl@ntNet — 500 identifications gratuites / jour.<br/>
+  Vos photos ne sont pas stockées dans l'application.
+</footer>
+
+<!-- Modal réglages -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h2>Clé API Pl@ntNet</h2>
+    <p class="hint">
+      Créez un compte gratuit sur <a href="https://my.plantnet.org" target="_blank" rel="noopener">my.plantnet.org</a>,
+      copiez votre clé API et collez-la ici. Elle reste stockée uniquement sur ce téléphone.
+    </p>
+    <label for="apiKeyInput">Clé API</label>
+    <input type="text" id="apiKeyInput" placeholder="Collez votre clé ici" autocomplete="off" autocapitalize="off" spellcheck="false" />
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancel" type="button">Fermer</button>
+      <button class="btn-save" id="modalSave" type="button">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const STORAGE_KEY = "herbier_plantnet_api_key";
+  const PROJECT = "all";
+
+  const els = {
+    cameraBtn: document.getElementById('cameraBtn'),
+    galleryBtn: document.getElementById('galleryBtn'),
+    cameraInput: document.getElementById('cameraInput'),
+    galleryInput: document.getElementById('galleryInput'),
+    previewFrame: document.getElementById('previewFrame'),
+    previewImg: document.getElementById('previewImg'),
+    fileMeta: document.getElementById('fileMeta'),
+    clearBtn: document.getElementById('clearBtn'),
+    analyzeBtn: document.getElementById('analyzeBtn'),
+    loadingWrap: document.getElementById('loadingWrap'),
+    errorNotice: document.getElementById('errorNotice'),
+    infoNotice: document.getElementById('infoNotice'),
+    results: document.getElementById('results'),
+    settingsBtn: document.getElementById('settingsBtn'),
+    modalBackdrop: document.getElementById('modalBackdrop'),
+    modalCancel: document.getElementById('modalCancel'),
+    modalSave: document.getElementById('modalSave'),
+    apiKeyInput: document.getElementById('apiKeyInput'),
+  };
+
+  let selectedFile = null;
+
+  function getApiKey(){
+    try { return localStorage.getItem(STORAGE_KEY) || ""; }
+    catch(e){ return ""; }
+  }
+  function setApiKey(key){
+    try { localStorage.setItem(STORAGE_KEY, key); }
+    catch(e){ /* stockage indisponible */ }
+  }
+
+  function openModal(){
+    els.apiKeyInput.value = getApiKey();
+    els.modalBackdrop.classList.add('visible');
+  }
+  function closeModal(){ els.modalBackdrop.classList.remove('visible'); }
+
+  els.settingsBtn.addEventListener('click', openModal);
+  els.modalCancel.addEventListener('click', closeModal);
+  els.modalBackdrop.addEventListener('click', (e)=>{ if(e.target === els.modalBackdrop) closeModal(); });
+  els.modalSave.addEventListener('click', ()=>{
+    setApiKey(els.apiKeyInput.value.trim());
+    closeModal();
+    hideNotice(els.errorNotice);
+  });
+
+  els.cameraBtn.addEventListener('click', ()=> els.cameraInput.click());
+  els.galleryBtn.addEventListener('click', ()=> els.galleryInput.click());
+  els.cameraInput.addEventListener('change', onFileChosen);
+  els.galleryInput.addEventListener('change', onFileChosen);
+
+  function onFileChosen(e){
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    selectedFile = file;
+    const url = URL.createObjectURL(file);
+    els.previewImg.src = url;
+    els.previewFrame.classList.add('visible');
+    els.fileMeta.textContent = (file.name || 'photo.jpg') + ' · ' + Math.round(file.size/1024) + ' Ko';
+    els.analyzeBtn.classList.add('visible');
+    clearResults();
+    hideNotice(els.errorNotice);
+    hideNotice(els.infoNotice);
+    e.target.value = "";
+  }
+
+  els.clearBtn.addEventListener('click', ()=>{
+    selectedFile = null;
+    els.previewFrame.classList.remove('visible');
+    els.analyzeBtn.classList.remove('visible');
+    clearResults();
+  });
+
+  function clearResults(){
+    els.results.innerHTML = "";
+  }
+  function showNotice(el, msg){
+    el.textContent = msg;
+    el.classList.add('visible');
+  }
+  function hideNotice(el){
+    el.classList.remove('visible');
+    el.textContent = "";
+  }
+
+  els.analyzeBtn.addEventListener('click', identify);
+
+  async function identify(){
+    hideNotice(els.errorNotice);
+    hideNotice(els.infoNotice);
+    clearResults();
+
+    const apiKey = getApiKey();
+    if(!apiKey){
+      showNotice(els.errorNotice, "Aucune clé API enregistrée. Ouvrez les réglages (icône en haut à droite) pour en ajouter une — c'est gratuit sur my.plantnet.org.");
+      openModal();
+      return;
+    }
+    if(!selectedFile){
+      showNotice(els.errorNotice, "Sélectionnez d'abord une photo.");
+      return;
+    }
+
+    els.analyzeBtn.disabled = true;
+    els.loadingWrap.classList.add('visible');
+
+    try{
+      const formData = new FormData();
+      formData.append('images', selectedFile, selectedFile.name || 'photo.jpg');
+
+      const url = `https://my-api.plantnet.org/v2/identify/${PROJECT}?lang=fr&nb-results=3&api-key=${encodeURIComponent(apiKey)}`;
+      const res = await fetch(url, { method: 'POST', body: formData });
+
+      if(res.status === 401 || res.status === 403){
+        throw { kind: 'auth' };
+      }
+      if(res.status === 429){
+        throw { kind: 'quota' };
+      }
+      if(!res.ok){
+        throw { kind: 'server', status: res.status };
+      }
+
+      const data = await res.json();
+      renderResults(data);
+
+    } catch(err){
+      handleError(err);
+    } finally {
+      els.analyzeBtn.disabled = false;
+      els.loadingWrap.classList.remove('visible');
+    }
+  }
+
+  function handleError(err){
+    if(err && err.kind === 'auth'){
+      showNotice(els.errorNotice, "Clé API refusée. Vérifiez qu'elle est correctement copiée dans les réglages.");
+      return;
+    }
+    if(err && err.kind === 'quota'){
+      showNotice(els.errorNotice, "Quota quotidien gratuit atteint (500 identifications/jour). Réessayez demain.");
+      return;
+    }
+    if(err && err.kind === 'server'){
+      showNotice(els.errorNotice, "Le service d'identification a répondu avec une erreur (" + err.status + "). Réessayez dans un instant.");
+      return;
+    }
+    showNotice(els.errorNotice, "Impossible de contacter le service d'identification. Vérifiez votre connexion internet.");
+  }
+
+  function renderResults(data){
+    const list = (data && data.results) || [];
+    if(list.length === 0){
+      showNotice(els.infoNotice, "Aucune correspondance trouvée. Essayez une photo plus nette, centrée sur une feuille ou une fleur.");
+      return;
+    }
+
+    if(list[0].score < 0.2){
+      showNotice(els.infoNotice, "Les résultats ci-dessous sont peu fiables (faible score de confiance). Une photo nette d'une feuille, fleur ou fruit isolé améliore la précision.");
+    }
+
+    const label = document.createElement('div');
+    label.className = 'results-label';
+    label.textContent = 'Résultats les plus probables';
+    els.results.appendChild(label);
+
+    list.slice(0,3).forEach((r, i) => {
+      els.results.appendChild(buildCard(r, i));
+    });
+  }
+
+  function escapeHtml(str){
+    return String(str || "").replace(/[&<>"']/g, (c)=>({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  function buildCard(result, index){
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const sci = result.species && result.species.scientificNameWithoutAuthor || "Espèce inconnue";
+    const family = result.species && result.species.family && result.species.family.scientificNameWithoutAuthor || "";
+    const commonNames = (result.species && result.species.commonNames) || [];
+    const scorePct = Math.round((result.score || 0) * 100);
+    const thumbUrl = result.images && result.images[0] && result.images[0].url && (result.images[0].url.s || result.images[0].url.m);
+
+    const thumb = document.createElement('div');
+    thumb.className = 'card-thumb';
+    if(thumbUrl){ thumb.style.backgroundImage = `url('${thumbUrl}')`; }
+    card.appendChild(thumb);
+
+    const body = document.createElement('div');
+    body.className = 'card-body';
+    body.innerHTML = `
+      <div class="rank-tag">#${index+1} correspondance</div>
+      <p class="sci-name">${escapeHtml(sci)}</p>
+      <p class="common-name">${commonNames.length ? escapeHtml(commonNames.slice(0,2).join(', ')) : 'Aucun nom commun connu'}</p>
+      <div class="meta-row">
+        <span>${scorePct}%</span>
+        <span class="score-bar"><span style="width:${scorePct}%"></span></span>
+      </div>
+      ${family ? `<span class="family-tag">${escapeHtml(family)}</span>` : ''}
+    `;
+    card.appendChild(body);
+    return card;
+  }
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').catch(()=>{ /* silencieux */ });
+    });
+  }
+
+  if(!getApiKey()){
+    setTimeout(openModal, 400);
+  }
+})();
+</script>
+
+</body>
+</html>
