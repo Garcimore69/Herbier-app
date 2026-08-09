@@ -1218,13 +1218,22 @@
     return `<p class="soins-desc">Cette espèce n'est pas référencée dans la base gratuite de Perenual (limitée aux espèces les plus courantes).</p>${soinsLinksHtml(sci)}`;
   }
 
+  const PERENUAL_FREE_MAX_ID = 3000;
+
+  function soinsOutOfRangeHtml(sci){
+    return `
+      <p class="soins-desc">Cette espèce existe dans la base Perenual mais sa fiche détaillée n'est accessible qu'avec un plan payant (le plan gratuit ne couvre que les ~3000 premières espèces de leur catalogue, et celle-ci est au-delà). Ce n'est pas un quota épuisé — ça ne débloquera pas demain.</p>
+      ${soinsLinksHtml(sci)}
+    `;
+  }
+
   function soinsErrorHtml(err, sci){
     let msg = "Impossible de récupérer la fiche soins.";
     if(err && err.kind === 'http'){
       if(err.status === 401 || err.status === 403){
         msg = "Accès refusé par Perenual (code " + err.status + "). Vérifie ta clé API dans les réglages, ou le réglage d'autorisation de domaine (CORS) sur ton compte Perenual — comme pour Pl@ntNet.";
       } else if(err.status === 429){
-        msg = "Quota quotidien gratuit Perenual atteint (100 requêtes/jour). Réessaie demain.";
+        msg = "Perenual a refusé la requête (code 429) — quota quotidien atteint, ou fonctionnalité réservée à un plan payant. Voir le détail ci-dessous.";
       } else {
         msg = "Le service a répondu avec une erreur (code " + err.status + ").";
       }
@@ -1307,6 +1316,11 @@
           best = m;
           break;
         }
+      }
+
+      if(best.id > PERENUAL_FREE_MAX_ID){
+        els.soinsBody.innerHTML = soinsOutOfRangeHtml(sci);
+        return;
       }
 
       const detailsUrl = `https://perenual.com/api/v2/species/details/${best.id}?key=${encodeURIComponent(key)}`;
