@@ -42,7 +42,6 @@
     overscroll-behavior-y: contain;
   }
 
-  /* Texture de fond très légère, façon papier */
   body{
     background-image:
       radial-gradient(circle at 20% 10%, rgba(63,91,58,0.05), transparent 40%),
@@ -79,6 +78,7 @@
     text-transform: uppercase;
     color: #C9CDBB;
   }
+  .header-actions{ display:flex; gap:8px; }
   .icon-btn{
     background: transparent;
     border: 1px solid rgba(255,255,255,0.25);
@@ -113,7 +113,6 @@
     line-height:1.5;
   }
 
-  /* Cadre de prévisualisation, façon planche d'herbier */
   .specimen-frame{
     background: var(--surface);
     border: 1px solid var(--line);
@@ -152,7 +151,6 @@
     padding:4px;
   }
 
-  /* Boutons de capture */
   .capture-row{
     display:grid;
     grid-template-columns: 1fr 1fr;
@@ -190,7 +188,6 @@
     display:none;
   }
 
-  /* Bouton d'analyse */
   .analyze-btn{
     width:100%;
     margin-top: 4px;
@@ -211,7 +208,6 @@
   .analyze-btn.visible{ display:flex; }
   .analyze-btn:disabled{ opacity:0.6; }
 
-  /* Etat de chargement : pousse qui grandit */
   .loading-wrap{
     display:none;
     flex-direction:column;
@@ -245,7 +241,6 @@
     100%{ stroke-dashoffset: 0; opacity:1;}
   }
 
-  /* Message d'erreur / info */
   .notice{
     display:none;
     border-radius: 14px;
@@ -253,13 +248,13 @@
     font-size: 13.5px;
     line-height:1.5;
     margin: 16px 0;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
   .notice.visible{ display:block; }
-  .notice{ white-space: pre-wrap; word-break: break-word; }
   .notice.error{ background: #F4E3DC; color: var(--error); border:1px solid #E4B7A6; }
   .notice.info{ background: #EAE7D4; color: var(--ink-soft); border:1px solid var(--line); }
 
-  /* Résultats */
   .results{
     margin-top: 22px;
     display:flex;
@@ -352,8 +347,35 @@
     padding: 3px 8px;
     border-radius: 6px;
   }
+  .card-actions{
+    display:flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .card-action-btn{
+    background:transparent;
+    border: 1px solid var(--line);
+    color: var(--moss-dark);
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size: 11px;
+    padding: 8px 11px;
+    border-radius: 9px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap: 5px;
+  }
+  .card-action-btn svg{ width:13px; height:13px; flex-shrink:0; }
+  .card-action-btn.saved{
+    background: var(--moss);
+    color: var(--paper);
+    border-color: var(--moss);
+  }
+  .card-action-btn:disabled{ opacity:0.85; cursor:default; }
 
-  /* Modal réglages */
+  /* Modal réglages (feuille du bas) */
   .modal-backdrop{
     position: fixed; inset:0;
     background: rgba(20,26,17,0.55);
@@ -365,14 +387,17 @@
   .modal{
     background: var(--surface);
     width:100%;
+    max-height: 88vh;
+    overflow-y:auto;
     border-radius: 20px 20px 0 0;
     padding: 22px 20px max(22px, env(safe-area-inset-bottom));
   }
   .modal h2{
     font-family:'Fraunces', serif;
     font-size: 19px;
-    margin: 0 0 4px;
+    margin: 18px 0 4px;
   }
+  .modal h2:first-of-type{ margin-top:0; }
   .modal p.hint{
     font-size: 12.5px;
     color: var(--ink-soft);
@@ -400,9 +425,11 @@
     font-family: 'IBM Plex Mono', monospace;
   }
   .modal a{ color: var(--moss); }
+  .modal hr.sep{ border:none; border-top:1px solid var(--line); margin: 4px 0 0; }
   .modal-actions{
     display:flex;
     gap: 10px;
+    margin-top: 6px;
   }
   .modal-actions button{
     flex:1;
@@ -415,6 +442,203 @@
   }
   .btn-save{ background: var(--moss); color: var(--paper); }
   .btn-cancel{ background: transparent; color: var(--ink-soft); border: 1px solid var(--line) !important; }
+
+  /* Panneaux plein écran : carnet + fiche soins */
+  .sheet-backdrop{
+    position: fixed; inset:0;
+    background: var(--paper);
+    z-index: 40;
+    display:none;
+    flex-direction:column;
+  }
+  .sheet-backdrop.visible{ display:flex; }
+  .sheet-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+    padding: max(14px, env(safe-area-inset-top)) 16px 14px 18px;
+    background: var(--moss-dark);
+    color: var(--paper);
+  }
+  .sheet-header-text{ min-width:0; }
+  .sheet-header h2{
+    font-family:'Fraunces', serif;
+    font-style: italic;
+    font-weight:600;
+    font-size: 19px;
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .sheet-header .sub{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color:#C9CDBB;
+    margin-top: 2px;
+  }
+  .sheet-body{
+    flex:1;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding: 18px 18px calc(30px + env(safe-area-inset-bottom));
+    max-width: 560px;
+    width:100%;
+    margin: 0 auto;
+  }
+
+  /* Carnet */
+  .carnet-empty{
+    text-align:center;
+    color:var(--muted);
+    padding: 70px 20px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    line-height:1.7;
+  }
+  .carnet-item{
+    display:grid;
+    grid-template-columns: 52px 1fr auto;
+    gap: 12px;
+    align-items:center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    cursor:pointer;
+  }
+  .carnet-thumb{
+    width:52px; height:52px;
+    border-radius: 8px;
+    background: var(--paper) center/cover no-repeat;
+    border: 1px solid var(--line);
+    flex-shrink:0;
+  }
+  .carnet-info{ min-width:0; }
+  .carnet-info .sci{
+    font-family:'Fraunces', serif;
+    font-style: italic;
+    font-size: 14.5px;
+    margin: 0 0 1px;
+    overflow-wrap: anywhere;
+  }
+  .carnet-info .common{
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin: 0 0 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .carnet-info .meta{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .carnet-del{
+    background:none;
+    border:none;
+    color: var(--muted);
+    font-size: 20px;
+    line-height:1;
+    padding: 4px 8px;
+    cursor:pointer;
+  }
+  .carnet-footer{ margin-top: 12px; text-align:center; }
+  .carnet-clear-btn{
+    background:none;
+    border: 1px solid var(--line);
+    color: var(--error);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 11px 18px;
+    border-radius: 10px;
+    cursor:pointer;
+  }
+
+  /* Fiche soins */
+  .soins-section-title{
+    font-family:'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-size: 10.5px;
+    color: var(--muted);
+    margin: 20px 0 8px;
+  }
+  .soins-section-title:first-child{ margin-top:0; }
+  .soins-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .soins-stat{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .soins-stat .k{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    margin-bottom: 3px;
+  }
+  .soins-stat .v{
+    font-size: 13.5px;
+    font-weight:600;
+    color: var(--ink);
+    line-height:1.35;
+  }
+  .soins-warning{
+    background: #F4E3DC;
+    border: 1px solid #E4B7A6;
+    color: var(--error);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 13px;
+    line-height:1.5;
+    margin-top: 14px;
+  }
+  .soins-desc{
+    font-size: 13.5px;
+    line-height:1.6;
+    color: var(--ink);
+    margin: 4px 0 0;
+  }
+  .soins-list{
+    margin: 8px 0 0 18px;
+    padding:0;
+    font-size: 13px;
+    color: var(--ink);
+    line-height:1.75;
+  }
+  .soins-links{
+    display:flex;
+    flex-direction:column;
+    gap: 9px;
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+  .soins-links a{
+    color: var(--moss);
+    font-size: 13px;
+    font-weight:600;
+    text-decoration:none;
+  }
+  .soins-links a:active{ opacity:0.7; }
+  .soins-loading{
+    padding: 50px 0 20px;
+    text-align:center;
+  }
+  .soins-loading p{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 10px;
+  }
 
   footer{
     text-align:center;
@@ -433,12 +657,21 @@
     <span class="brand-mark">Herbier</span>
     <span class="brand-sub">Identification photo</span>
   </div>
-  <button class="icon-btn" id="settingsBtn" aria-label="Réglages">
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
-      <circle cx="12" cy="12" r="3.2"/>
-      <path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9c.5.4 1.1.75 1.7 1l.4 2.5h4l.4-2.5c.6-.25 1.2-.6 1.7-1l2.3.9 2-3.4-2-1.5Z"/>
-    </svg>
-  </button>
+  <div class="header-actions">
+    <button class="icon-btn" id="carnetBtn" aria-label="Carnet">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H18a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6.5A1.5 1.5 0 0 1 5 19.5v-15Z"/>
+        <path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H9v18H6.5A1.5 1.5 0 0 1 5 19.5v-15Z" fill="currentColor" fill-opacity="0.18"/>
+        <path d="M9 7h7M9 10.2h7"/>
+      </svg>
+    </button>
+    <button class="icon-btn" id="settingsBtn" aria-label="Réglages">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="12" cy="12" r="3.2"/>
+        <path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9c.5.4 1.1.75 1.7 1l.4 2.5h4l.4-2.5c.6-.25 1.2-.6 1.7-1l2.3.9 2-3.4-2-1.5Z"/>
+      </svg>
+    </button>
+  </div>
 </header>
 
 <main>
@@ -487,8 +720,8 @@
 </main>
 
 <footer>
-  Résultats fournis par l'API Pl@ntNet — 500 identifications gratuites / jour.<br/>
-  Vos photos ne sont pas stockées dans l'application.
+  Identification : API Pl@ntNet (500/jour gratuit). Fiches soins : API Perenual (100/jour gratuit).<br/>
+  Vos photos ne sont pas envoyées ailleurs. Le carnet est stocké uniquement sur ce téléphone.
 </footer>
 
 <!-- Modal réglages -->
@@ -496,11 +729,24 @@
   <div class="modal">
     <h2>Clé API Pl@ntNet</h2>
     <p class="hint">
-      Créez un compte gratuit sur <a href="https://my.plantnet.org" target="_blank" rel="noopener">my.plantnet.org</a>,
-      copiez votre clé API et collez-la ici. Elle reste stockée uniquement sur ce téléphone.
+      Pour l'identification. Créez un compte gratuit sur <a href="https://my.plantnet.org" target="_blank" rel="noopener">my.plantnet.org</a>,
+      copiez votre clé API et collez-la ici.
     </p>
-    <label for="apiKeyInput">Clé API</label>
+    <label for="apiKeyInput">Clé API Pl@ntNet</label>
     <input type="text" id="apiKeyInput" placeholder="Collez votre clé ici" autocomplete="off" autocapitalize="off" spellcheck="false" />
+
+    <hr class="sep" />
+
+    <h2>Clé API Perenual</h2>
+    <p class="hint">
+      Pour la fiche soins & état. Créez un compte gratuit sur <a href="https://perenual.com/user/developer" target="_blank" rel="noopener">perenual.com/user/developer</a>,
+      copiez votre clé API et collez-la ici. Si tu obtiens une erreur CORS lors de l'utilisation, vérifie les réglages de ton compte Perenual pour autoriser ce domaine (comme pour Pl@ntNet).
+    </p>
+    <label for="perenualKeyInput">Clé API Perenual</label>
+    <input type="text" id="perenualKeyInput" placeholder="Collez votre clé ici" autocomplete="off" autocapitalize="off" spellcheck="false" />
+
+    <p class="hint" style="margin-top:-6px;">Les deux clés restent stockées uniquement sur ce téléphone.</p>
+
     <div class="modal-actions">
       <button class="btn-cancel" id="modalCancel" type="button">Fermer</button>
       <button class="btn-save" id="modalSave" type="button">Enregistrer</button>
@@ -508,11 +754,42 @@
   </div>
 </div>
 
+<!-- Panneau Carnet -->
+<div class="sheet-backdrop" id="carnetBackdrop">
+  <div class="sheet-header">
+    <div class="sheet-header-text">
+      <h2>Carnet</h2>
+      <div class="sub">Plantes identifiées enregistrées</div>
+    </div>
+    <button class="icon-btn" id="carnetCloseBtn" aria-label="Fermer">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l14 14M19 5 5 19"/></svg>
+    </button>
+  </div>
+  <div class="sheet-body" id="carnetBody"></div>
+</div>
+
+<!-- Panneau Fiche soins -->
+<div class="sheet-backdrop" id="soinsBackdrop">
+  <div class="sheet-header">
+    <div class="sheet-header-text">
+      <h2 id="soinsTitle">—</h2>
+      <div class="sub" id="soinsCommon"></div>
+    </div>
+    <button class="icon-btn" id="soinsCloseBtn" aria-label="Fermer">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l14 14M19 5 5 19"/></svg>
+    </button>
+  </div>
+  <div class="sheet-body" id="soinsBody"></div>
+</div>
+
 <script>
 (function(){
   "use strict";
 
   const STORAGE_KEY = "herbier_plantnet_api_key";
+  const PERENUAL_STORAGE_KEY = "herbier_perenual_api_key";
+  const HISTORY_KEY = "herbier_history";
+  const MAX_HISTORY = 200;
   const PROJECT = "all";
 
   const els = {
@@ -534,10 +811,21 @@
     modalCancel: document.getElementById('modalCancel'),
     modalSave: document.getElementById('modalSave'),
     apiKeyInput: document.getElementById('apiKeyInput'),
+    perenualKeyInput: document.getElementById('perenualKeyInput'),
+    carnetBtn: document.getElementById('carnetBtn'),
+    carnetBackdrop: document.getElementById('carnetBackdrop'),
+    carnetCloseBtn: document.getElementById('carnetCloseBtn'),
+    carnetBody: document.getElementById('carnetBody'),
+    soinsBackdrop: document.getElementById('soinsBackdrop'),
+    soinsCloseBtn: document.getElementById('soinsCloseBtn'),
+    soinsTitle: document.getElementById('soinsTitle'),
+    soinsCommon: document.getElementById('soinsCommon'),
+    soinsBody: document.getElementById('soinsBody'),
   };
 
   let selectedFile = null;
 
+  /* ---------- Clés API ---------- */
   function getApiKey(){
     try { return localStorage.getItem(STORAGE_KEY) || ""; }
     catch(e){ return ""; }
@@ -546,9 +834,64 @@
     try { localStorage.setItem(STORAGE_KEY, key); }
     catch(e){ /* stockage indisponible */ }
   }
+  function getPerenualKey(){
+    try { return localStorage.getItem(PERENUAL_STORAGE_KEY) || ""; }
+    catch(e){ return ""; }
+  }
+  function setPerenualKey(key){
+    try { localStorage.setItem(PERENUAL_STORAGE_KEY, key); }
+    catch(e){ /* stockage indisponible */ }
+  }
 
+  /* ---------- Carnet (historique local) ---------- */
+  function loadHistory(){
+    try{
+      const raw = localStorage.getItem(HISTORY_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }catch(e){ return []; }
+  }
+  function saveHistoryArr(arr){
+    try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(arr)); }
+    catch(e){ /* stockage plein ou indisponible */ }
+  }
+  function addHistoryEntry(entry){
+    const arr = loadHistory();
+    arr.unshift(entry);
+    if(arr.length > MAX_HISTORY){ arr.length = MAX_HISTORY; }
+    saveHistoryArr(arr);
+  }
+  function deleteHistoryEntry(id){
+    saveHistoryArr(loadHistory().filter(h => h.id !== id));
+  }
+  function clearHistory(){ saveHistoryArr([]); }
+
+  function makeThumbnail(file, maxDim){
+    return new Promise((resolve, reject)=>{
+      if(!file){ resolve(""); return; }
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        const scale = Math.min(1, maxDim / Math.max(w, h));
+        w = Math.max(1, Math.round(w * scale));
+        h = Math.max(1, Math.round(h * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        try{ resolve(canvas.toDataURL('image/jpeg', 0.6)); }
+        catch(e){ resolve(""); }
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(""); };
+      img.src = url;
+    });
+  }
+
+  /* ---------- Modal réglages ---------- */
   function openModal(){
     els.apiKeyInput.value = getApiKey();
+    els.perenualKeyInput.value = getPerenualKey();
     els.modalBackdrop.classList.add('visible');
   }
   function closeModal(){ els.modalBackdrop.classList.remove('visible'); }
@@ -558,10 +901,12 @@
   els.modalBackdrop.addEventListener('click', (e)=>{ if(e.target === els.modalBackdrop) closeModal(); });
   els.modalSave.addEventListener('click', ()=>{
     setApiKey(els.apiKeyInput.value.trim());
+    setPerenualKey(els.perenualKeyInput.value.trim());
     closeModal();
     hideNotice(els.errorNotice);
   });
 
+  /* ---------- Capture photo ---------- */
   els.cameraBtn.addEventListener('click', ()=> els.cameraInput.click());
   els.galleryBtn.addEventListener('click', ()=> els.galleryInput.click());
   els.cameraInput.addEventListener('change', onFileChosen);
@@ -601,6 +946,7 @@
     el.textContent = "";
   }
 
+  /* ---------- Identification Pl@ntNet ---------- */
   els.analyzeBtn.addEventListener('click', identify);
 
   async function identify(){
@@ -636,7 +982,7 @@
       }
 
       const data = await res.json();
-      renderResults(data);
+      await renderResults(data);
 
     } catch(err){
       handleError(err);
@@ -666,7 +1012,7 @@
     showNotice(els.errorNotice, "Impossible de contacter le service d'identification. Vérifiez votre connexion internet." + msg);
   }
 
-  function renderResults(data){
+  async function renderResults(data){
     const list = (data && data.results) || [];
     if(list.length === 0){
       showNotice(els.infoNotice, "Aucune correspondance trouvée. Essayez une photo plus nette, centrée sur une feuille ou une fleur.");
@@ -682,8 +1028,11 @@
     label.textContent = 'Résultats les plus probables';
     els.results.appendChild(label);
 
+    let thumbDataUrl = "";
+    try{ thumbDataUrl = await makeThumbnail(selectedFile, 160); }catch(e){ thumbDataUrl = ""; }
+
     list.slice(0,3).forEach((r, i) => {
-      els.results.appendChild(buildCard(r, i));
+      els.results.appendChild(buildCard(r, i, thumbDataUrl));
     });
   }
 
@@ -693,7 +1042,7 @@
     }[c]));
   }
 
-  function buildCard(result, index){
+  function buildCard(result, index, thumbDataUrl){
     const card = document.createElement('div');
     card.className = 'card';
 
@@ -720,10 +1069,261 @@
       </div>
       ${family ? `<span class="family-tag">${escapeHtml(family)}</span>` : ''}
     `;
+
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+
+    const soinsBtn = document.createElement('button');
+    soinsBtn.type = 'button';
+    soinsBtn.className = 'card-action-btn';
+    soinsBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-9.5-9C.5 8 2 4 6 4c2.2 0 3.6 1.2 4.5 2.5C11.4 5.2 12.8 4 15 4c4 0 5.5 4 3.5 8-2.5 4.5-8.5 9-8.5 9Z"/></svg>Soins & état`;
+    soinsBtn.addEventListener('click', ()=> openSoins(sci, commonNames[0] || ''));
+    actions.appendChild(soinsBtn);
+
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'card-action-btn';
+    saveBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H16l3 3v13.5A1.5 1.5 0 0 1 17.5 21h-11A1.5 1.5 0 0 1 5 19.5v-15Z"/><path d="M9 7h5"/></svg>Ajouter au carnet`;
+    saveBtn.addEventListener('click', ()=>{
+      addHistoryEntry({
+        id: 'h_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+        date: new Date().toISOString(),
+        thumbnail: thumbDataUrl || '',
+        scientificName: sci,
+        commonName: commonNames[0] || '',
+        family: family || '',
+        score: scorePct,
+      });
+      saveBtn.classList.add('saved');
+      saveBtn.innerHTML = `✓ Ajouté au carnet`;
+      saveBtn.disabled = true;
+    });
+    actions.appendChild(saveBtn);
+
+    body.appendChild(actions);
     card.appendChild(body);
     return card;
   }
 
+  /* ---------- Panneau Carnet ---------- */
+  function openCarnet(){
+    renderCarnet();
+    els.carnetBackdrop.classList.add('visible');
+  }
+  function closeCarnet(){ els.carnetBackdrop.classList.remove('visible'); }
+
+  els.carnetBtn.addEventListener('click', openCarnet);
+  els.carnetCloseBtn.addEventListener('click', closeCarnet);
+
+  function renderCarnet(){
+    const items = loadHistory();
+    if(items.length === 0){
+      els.carnetBody.innerHTML = `<div class="carnet-empty">Ton carnet est vide.<br/>Identifie une plante puis appuie sur « Ajouter au carnet » pour la conserver ici.</div>`;
+      return;
+    }
+    let html = '';
+    items.forEach(it=>{
+      let dateStr = '';
+      try{ dateStr = new Date(it.date).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'numeric'}); }
+      catch(e){ dateStr = ''; }
+      html += `
+        <div class="carnet-item" data-id="${escapeHtml(it.id)}">
+          <div class="carnet-thumb" style="${it.thumbnail ? `background-image:url('${it.thumbnail}')` : ''}"></div>
+          <div class="carnet-info">
+            <p class="sci">${escapeHtml(it.scientificName || 'Espèce inconnue')}</p>
+            <p class="common">${escapeHtml(it.commonName || 'Nom commun inconnu')}</p>
+            <p class="meta">${escapeHtml(dateStr)}${typeof it.score === 'number' ? ' · ' + it.score + '%' : ''}</p>
+          </div>
+          <button type="button" class="carnet-del" data-del="${escapeHtml(it.id)}" aria-label="Supprimer">×</button>
+        </div>
+      `;
+    });
+    html += `<div class="carnet-footer"><button type="button" class="carnet-clear-btn" id="carnetClearBtn">Vider le carnet</button></div>`;
+    els.carnetBody.innerHTML = html;
+  }
+
+  els.carnetBody.addEventListener('click', (e)=>{
+    const delId = e.target.getAttribute && e.target.getAttribute('data-del');
+    if(delId){
+      e.stopPropagation();
+      deleteHistoryEntry(delId);
+      renderCarnet();
+      return;
+    }
+    if(e.target.id === 'carnetClearBtn'){
+      if(confirm('Vider tout le carnet ? Cette action est définitive.')){
+        clearHistory();
+        renderCarnet();
+      }
+      return;
+    }
+    const item = e.target.closest('.carnet-item');
+    if(item){
+      const id = item.getAttribute('data-id');
+      const entry = loadHistory().find(h => h.id === id);
+      if(entry){
+        closeCarnet();
+        openSoins(entry.scientificName, entry.commonName);
+      }
+    }
+  });
+
+  /* ---------- Panneau Fiche soins (Perenual) ---------- */
+  function openSoins(sci, common){
+    els.soinsTitle.textContent = sci || 'Espèce inconnue';
+    els.soinsCommon.textContent = common || '';
+    els.soinsBody.innerHTML = `
+      <div class="soins-loading">
+        <svg class="sprout" viewBox="0 0 60 60" width="46" height="46">
+          <path class="stem" d="M30 52 L30 26"/>
+          <path class="leafL" d="M30 34 C18 34 14 24 16 14 C26 16 32 22 30 34 Z"/>
+          <path class="leafR" d="M30 26 C42 26 46 16 44 8 C34 10 28 16 30 26 Z"/>
+        </svg>
+        <p>Recherche des soins…</p>
+      </div>
+    `;
+    els.soinsBackdrop.classList.add('visible');
+    loadSoins(sci);
+  }
+  function closeSoins(){ els.soinsBackdrop.classList.remove('visible'); }
+  els.soinsCloseBtn.addEventListener('click', closeSoins);
+
+  els.soinsBody.addEventListener('click', (e)=>{
+    if(e.target && e.target.id === 'soinsOpenSettings'){
+      closeSoins();
+      openModal();
+    }
+  });
+
+  function soinsLinksHtml(sci){
+    const qWeb = encodeURIComponent(sci + ' entretien plante soins maladies');
+    const qWiki = encodeURIComponent(sci).replace(/%20/g, '_');
+    return `
+      <div class="soins-links">
+        <a href="https://fr.wikipedia.org/wiki/${qWiki}" target="_blank" rel="noopener">📖 Voir la fiche Wikipédia →</a>
+        <a href="https://www.google.com/search?q=${qWeb}" target="_blank" rel="noopener">🔎 Rechercher davantage sur le web →</a>
+      </div>
+    `;
+  }
+
+  function soinsNoKeyHtml(sci){
+    return `
+      <p class="soins-desc">Aucune clé Perenual enregistrée. Ajoute-en une gratuitement dans les réglages pour afficher la fiche soins détaillée (arrosage, exposition, toxicité, entretien...).</p>
+      <button type="button" class="card-action-btn" id="soinsOpenSettings" style="margin-top:12px;">Ouvrir les réglages</button>
+      ${soinsLinksHtml(sci)}
+    `;
+  }
+
+  function soinsNotFoundHtml(sci){
+    return `<p class="soins-desc">Cette espèce n'est pas référencée dans la base gratuite de Perenual (limitée aux espèces les plus courantes).</p>${soinsLinksHtml(sci)}`;
+  }
+
+  function soinsErrorHtml(err, sci){
+    let msg = "Impossible de récupérer la fiche soins.";
+    if(err && err.kind === 'http'){
+      if(err.status === 401 || err.status === 403){
+        msg = "Accès refusé par Perenual (code " + err.status + "). Vérifie ta clé API dans les réglages, ou le réglage d'autorisation de domaine (CORS) sur ton compte Perenual — comme pour Pl@ntNet.";
+      } else if(err.status === 429){
+        msg = "Quota quotidien gratuit Perenual atteint (100 requêtes/jour). Réessaie demain.";
+      } else {
+        msg = "Le service a répondu avec une erreur (code " + err.status + ").";
+      }
+      if(err.detail){ msg += "\nDétail technique : " + err.detail.slice(0, 300); }
+    }
+    return `<p class="soins-desc" style="white-space:pre-wrap;color:var(--error);">${escapeHtml(msg)}</p>${soinsLinksHtml(sci)}`;
+  }
+
+  function renderSoinsHtml(d, sci){
+    const watering = d.watering || '—';
+    const benchmark = (d.watering_general_benchmark && d.watering_general_benchmark.value)
+      ? ` (tous les ${d.watering_general_benchmark.value} ${d.watering_general_benchmark.unit || 'jours'})` : '';
+    const sunlight = Array.isArray(d.sunlight) ? d.sunlight.join(', ') : (d.sunlight || '—');
+    const careLevel = d.care_level || '—';
+    const cycle = d.cycle || '—';
+    const drought = d.drought_tolerant ? 'Oui' : 'Non';
+    const indoor = d.indoor ? 'Oui' : 'Non';
+    const poisonH = !!d.poisonous_to_humans;
+    const poisonP = !!d.poisonous_to_pets;
+    const pests = Array.isArray(d.pest_susceptibility) ? d.pest_susceptibility : [];
+    const desc = d.description ? escapeHtml(d.description) : '';
+
+    let html = `
+      <p class="soins-section-title">Fiche soins</p>
+      <div class="soins-grid">
+        <div class="soins-stat"><div class="k">Arrosage</div><div class="v">${escapeHtml(watering)}${escapeHtml(benchmark)}</div></div>
+        <div class="soins-stat"><div class="k">Exposition</div><div class="v">${escapeHtml(sunlight)}</div></div>
+        <div class="soins-stat"><div class="k">Niveau d'entretien</div><div class="v">${escapeHtml(careLevel)}</div></div>
+        <div class="soins-stat"><div class="k">Cycle de vie</div><div class="v">${escapeHtml(cycle)}</div></div>
+        <div class="soins-stat"><div class="k">Résiste à la sécheresse</div><div class="v">${drought}</div></div>
+        <div class="soins-stat"><div class="k">Plante d'intérieur</div><div class="v">${indoor}</div></div>
+      </div>
+    `;
+
+    if(poisonH || poisonP){
+      html += `<div class="soins-warning"><strong>⚠ Toxicité — </strong>${poisonH ? 'toxique pour l\'humain. ' : ''}${poisonP ? 'toxique pour les animaux domestiques.' : ''}</div>`;
+    }
+
+    html += `<p class="soins-section-title">Signes à surveiller</p>`;
+    html += `<p class="soins-desc">Feuilles jaunes ou molles : souvent un excès d'eau. Feuilles brunes et sèches en périphérie : manque d'eau ou air trop sec. Taches, dépôts collants ou fines toiles : signe possible de parasites.</p>`;
+    if(pests.length){
+      html += `<ul class="soins-list">`;
+      pests.slice(0,6).forEach(p=>{ html += `<li>${escapeHtml(p)}</li>`; });
+      html += `</ul>`;
+    }
+
+    if(desc){
+      html += `<p class="soins-section-title">À propos de cette espèce</p><p class="soins-desc">${desc}</p>`;
+    }
+
+    html += soinsLinksHtml(sci);
+    return html;
+  }
+
+  async function loadSoins(sci){
+    const key = getPerenualKey();
+    if(!key){
+      els.soinsBody.innerHTML = soinsNoKeyHtml(sci);
+      return;
+    }
+    try{
+      const searchUrl = `https://perenual.com/api/v2/species-list?key=${encodeURIComponent(key)}&q=${encodeURIComponent(sci)}`;
+      const searchRes = await fetch(searchUrl);
+      if(!searchRes.ok){
+        let detail = ''; try{ detail = await searchRes.text(); }catch(e){}
+        throw { kind:'http', status: searchRes.status, detail: detail };
+      }
+      const searchData = await searchRes.json();
+      const matches = (searchData && searchData.data) || [];
+      if(matches.length === 0){
+        els.soinsBody.innerHTML = soinsNotFoundHtml(sci);
+        return;
+      }
+
+      const target = String(sci).toLowerCase();
+      let best = matches[0];
+      for(const m of matches){
+        const names = (m.scientific_name || []).map(n => String(n).toLowerCase());
+        if(names.some(n => n === target || target.indexOf(n) !== -1 || n.indexOf(target) !== -1)){
+          best = m;
+          break;
+        }
+      }
+
+      const detailsUrl = `https://perenual.com/api/v2/species/details/${best.id}?key=${encodeURIComponent(key)}`;
+      const detailsRes = await fetch(detailsUrl);
+      if(!detailsRes.ok){
+        let detail = ''; try{ detail = await detailsRes.text(); }catch(e){}
+        throw { kind:'http', status: detailsRes.status, detail: detail };
+      }
+      const d = await detailsRes.json();
+      els.soinsBody.innerHTML = renderSoinsHtml(d, sci);
+
+    } catch(err){
+      els.soinsBody.innerHTML = soinsErrorHtml(err, sci);
+    }
+  }
+
+  /* ---------- Service worker ---------- */
   if('serviceWorker' in navigator){
     window.addEventListener('load', ()=>{
       navigator.serviceWorker.register('sw.js').catch(()=>{ /* silencieux */ });
