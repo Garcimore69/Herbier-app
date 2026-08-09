@@ -629,6 +629,41 @@
     text-decoration:none;
   }
   .soins-links a:active{ opacity:0.7; }
+  .wiki-extract{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .wiki-extract:has(.wiki-thumb){
+    grid-template-columns: 64px 1fr;
+    align-items:start;
+  }
+  .wiki-thumb{
+    width:64px; height:64px;
+    border-radius: 10px;
+    background: var(--surface) center/cover no-repeat;
+    border: 1px solid var(--line);
+    flex-shrink:0;
+  }
+  .wiki-read-link{
+    color: var(--moss);
+    font-size: 13px;
+    font-weight:600;
+    text-decoration:none;
+  }
+  .wiki-lang-tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .wiki-source{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
   .soins-loading{
     padding: 50px 0 20px;
     text-align:center;
@@ -1168,8 +1203,9 @@
     }
   });
 
-  /* ---------- Panneau Fiche soins (Perenual) ---------- */
+  /* ---------- Panneau Fiche soins (Perenual + repli Wikipédia) ---------- */
   function openSoins(sci, common){
+    soinsCurrentSci = sci;
     els.soinsTitle.textContent = sci || 'Espèce inconnue';
     els.soinsCommon.textContent = common || '';
     els.soinsBody.innerHTML = `
@@ -1195,51 +1231,105 @@
     }
   });
 
+  let soinsCurrentSci = '';
+
   function soinsLinksHtml(sci){
     const qWeb = encodeURIComponent(sci + ' entretien plante soins maladies');
-    const qWiki = encodeURIComponent(sci).replace(/%20/g, '_');
     return `
       <div class="soins-links">
-        <a href="https://fr.wikipedia.org/wiki/${qWiki}" target="_blank" rel="noopener">📖 Voir la fiche Wikipédia →</a>
         <a href="https://www.google.com/search?q=${qWeb}" target="_blank" rel="noopener">🔎 Rechercher davantage sur le web →</a>
       </div>
     `;
   }
 
-  function soinsNoKeyHtml(sci){
+  async function fetchWikipediaSummary(sci){
+    const title = encodeURIComponent(String(sci).trim().replace(/ /g, '_'));
+    const langs = ['fr', 'en'];
+    for(const lang of langs){
+      try{
+        const res = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${title}`, {
+          headers: { 'Accept': 'application/json' }
+        });
+        if(!res.ok) continue;
+        const data = await res.json();
+        if(data && data.extract && data.type !== 'disambiguation'){
+          return {
+            extract: data.extract,
+            thumbnail: data.thumbnail && data.thumbnail.source,
+            url: (data.content_urls && data.content_urls.desktop && data.content_urls.desktop.page)
+                 || `https://${lang}.wikipedia.org/wiki/${title}`,
+            lang: lang,
+          };
+        }
+      }catch(e){ /* on essaie la langue suivante */ }
+    }
+    return null;
+  }
+
+  function wikiBlockHtml(w){
+    if(!w){
+      return `<p class="soins-desc" style="color:var(--muted);font-style:italic;">Aucun article Wikipédia trouvé pour cette espèce.</p>`;
+    }
+    const langNote = w.lang === 'en' ? ` <span class="wiki-lang-tag">article en anglais</span>` : '';
+    const thumb = w.thumbnail ? `<div class="wiki-thumb" style="background-image:url('${w.thumbnail}')"></div>` : '';
     return `
-      <p class="soins-desc">Aucune clé Perenual enregistrée. Ajoute-en une gratuitement dans les réglages pour afficher la fiche soins détaillée (arrosage, exposition, toxicité, entretien...).</p>
-      <button type="button" class="card-action-btn" id="soinsOpenSettings" style="margin-top:12px;">Ouvrir les réglages</button>
-      ${soinsLinksHtml(sci)}
+      <div class="wiki-extract">
+        ${thumb}
+        <div class="wiki-extract-text">
+          <p class="soins-desc">${escapeHtml(w.extract)}</p>
+          <p style="margin-top:8px;"><a href="${w.url}" target="_blank" rel="noopener" class="wiki-read-link">Lire l'article complet →</a>${langNote}</p>
+          <p class="wiki-source">Source : Wikipédia — licence CC BY-SA</p>
+        </div>
+      </div>
     `;
   }
 
-  function soinsNotFoundHtml(sci){
-    return `<p class="soins-desc">Cette espèce n'est pas référencée dans la base gratuite de Perenual (limitée aux espèces les plus courantes).</p>${soinsLinksHtml(sci)}`;
+  async function showFallback(reasonHtml, sci){
+    soinsCurrentSci = sci;
+    els.soinsBody.innerHTML = `
+      ${reasonHtml}
+      <p class="soins-section-title">Depuis Wikipédia</p>
+      <div id="wikiSlot" class="soins-loading" style="padding:16px 0;">
+        <p style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-soft);">Recherche d'un article…</p>
+      </div>
+      ${soinsLinksHtml(sci)}
+    `;
+    const w = await fetchWikipediaSummary(sci);
+    if(soinsCurrentSci !== sci) return;
+    const slot = document.getElementById('wikiSlot');
+    if(slot){ slot.outerHTML = `<div id="wikiSlot">${wikiBlockHtml(w)}</div>`; }
+  }
+
+  function reasonNoKeyHtml(){
+    return `
+      <p class="soins-desc">Aucune clé Perenual enregistrée. Ajoute-en une gratuitement dans les réglages pour afficher la fiche soins détaillée (arrosage, exposition, toxicité, entretien...).</p>
+      <button type="button" class="card-action-btn" id="soinsOpenSettings" style="margin-top:10px;">Ouvrir les réglages</button>
+    `;
+  }
+
+  function reasonNotFoundHtml(){
+    return `<p class="soins-desc">Cette espèce n'est pas référencée dans la base gratuite de Perenual (limitée aux espèces les plus courantes).</p>`;
   }
 
   const PERENUAL_FREE_MAX_ID = 3000;
 
-  function soinsOutOfRangeHtml(sci){
-    return `
-      <p class="soins-desc">Cette espèce existe dans la base Perenual mais sa fiche détaillée n'est accessible qu'avec un plan payant (le plan gratuit ne couvre que les ~3000 premières espèces de leur catalogue, et celle-ci est au-delà). Ce n'est pas un quota épuisé — ça ne débloquera pas demain.</p>
-      ${soinsLinksHtml(sci)}
-    `;
+  function reasonOutOfRangeHtml(){
+    return `<p class="soins-desc">Cette espèce existe dans la base Perenual mais sa fiche détaillée n'est accessible qu'avec un plan payant (le plan gratuit ne couvre que les ~3000 premières espèces de leur catalogue, et celle-ci est au-delà). Ce n'est pas un quota épuisé — ça ne débloquera pas demain.</p>`;
   }
 
-  function soinsErrorHtml(err, sci){
-    let msg = "Impossible de récupérer la fiche soins.";
+  function reasonErrorHtml(err){
+    let msg = "Impossible de récupérer la fiche soins Perenual.";
     if(err && err.kind === 'http'){
       if(err.status === 401 || err.status === 403){
-        msg = "Accès refusé par Perenual (code " + err.status + "). Vérifie ta clé API dans les réglages, ou le réglage d'autorisation de domaine (CORS) sur ton compte Perenual — comme pour Pl@ntNet.";
+        msg = "Accès refusé par Perenual (code " + err.status + "). Vérifie ta clé API dans les réglages, ou le réglage d'autorisation de domaine (CORS) sur ton compte Perenual.";
       } else if(err.status === 429){
-        msg = "Perenual a refusé la requête (code 429) — quota quotidien atteint, ou fonctionnalité réservée à un plan payant. Voir le détail ci-dessous.";
+        msg = "Perenual a refusé la requête (code 429) — quota quotidien atteint, ou fonctionnalité réservée à un plan payant.";
       } else {
         msg = "Le service a répondu avec une erreur (code " + err.status + ").";
       }
       if(err.detail){ msg += "\nDétail technique : " + err.detail.slice(0, 300); }
     }
-    return `<p class="soins-desc" style="white-space:pre-wrap;color:var(--error);">${escapeHtml(msg)}</p>${soinsLinksHtml(sci)}`;
+    return `<p class="soins-desc" style="white-space:pre-wrap;color:var(--error);">${escapeHtml(msg)}</p>`;
   }
 
   function renderSoinsHtml(d, sci){
@@ -1291,7 +1381,7 @@
   async function loadSoins(sci){
     const key = getPerenualKey();
     if(!key){
-      els.soinsBody.innerHTML = soinsNoKeyHtml(sci);
+      await showFallback(reasonNoKeyHtml(), sci);
       return;
     }
     try{
@@ -1304,7 +1394,7 @@
       const searchData = await searchRes.json();
       const matches = (searchData && searchData.data) || [];
       if(matches.length === 0){
-        els.soinsBody.innerHTML = soinsNotFoundHtml(sci);
+        await showFallback(reasonNotFoundHtml(), sci);
         return;
       }
 
@@ -1319,7 +1409,7 @@
       }
 
       if(best.id > PERENUAL_FREE_MAX_ID){
-        els.soinsBody.innerHTML = soinsOutOfRangeHtml(sci);
+        await showFallback(reasonOutOfRangeHtml(), sci);
         return;
       }
 
@@ -1330,10 +1420,11 @@
         throw { kind:'http', status: detailsRes.status, detail: detail };
       }
       const d = await detailsRes.json();
+      if(soinsCurrentSci !== sci) return;
       els.soinsBody.innerHTML = renderSoinsHtml(d, sci);
 
     } catch(err){
-      els.soinsBody.innerHTML = soinsErrorHtml(err, sci);
+      await showFallback(reasonErrorHtml(err), sci);
     }
   }
 
