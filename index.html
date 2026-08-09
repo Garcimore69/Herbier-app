@@ -1065,9 +1065,10 @@
 
     let thumbDataUrl = "";
     try{ thumbDataUrl = await makeThumbnail(selectedFile, 160); }catch(e){ thumbDataUrl = ""; }
+    const photoKey = computePhotoKey(selectedFile);
 
     list.slice(0,3).forEach((r, i) => {
-      els.results.appendChild(buildCard(r, i, thumbDataUrl));
+      els.results.appendChild(buildCard(r, i, thumbDataUrl, photoKey));
     });
   }
 
@@ -1077,7 +1078,17 @@
     }[c]));
   }
 
-  function buildCard(result, index, thumbDataUrl){
+  function formatCarnetDate(iso){
+    try{ return new Date(iso).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'numeric'}); }
+    catch(e){ return ''; }
+  }
+
+  function computePhotoKey(file){
+    if(!file) return '';
+    return [file.name || '', file.size || 0, file.lastModified || 0].join('|');
+  }
+
+  function buildCard(result, index, thumbDataUrl, photoKey){
     const card = document.createElement('div');
     card.className = 'card';
 
@@ -1120,10 +1131,30 @@
     saveBtn.className = 'card-action-btn';
     saveBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H16l3 3v13.5A1.5 1.5 0 0 1 17.5 21h-11A1.5 1.5 0 0 1 5 19.5v-15Z"/><path d="M9 7h5"/></svg>Ajouter au carnet`;
     saveBtn.addEventListener('click', ()=>{
+      const history = loadHistory();
+      const photoDup = photoKey ? history.find(h => h.photoKey === photoKey) : null;
+
+      if(photoDup){
+        const ok = confirm(
+          `Cette photo est déjà dans ton carnet, ajoutée le ${formatCarnetDate(photoDup.date)} ` +
+          `sous le nom « ${photoDup.scientificName} ». L'ajouter quand même ?`
+        );
+        if(!ok) return;
+      } else {
+        const sciDup = history.find(h => (h.scientificName || '').trim().toLowerCase() === sci.trim().toLowerCase());
+        if(sciDup){
+          const ok = confirm(
+            `${sci} est déjà dans ton carnet (ajoutée le ${formatCarnetDate(sciDup.date)}). L'ajouter quand même ?`
+          );
+          if(!ok) return;
+        }
+      }
+
       addHistoryEntry({
         id: 'h_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
         date: new Date().toISOString(),
         thumbnail: thumbDataUrl || '',
+        photoKey: photoKey || '',
         scientificName: sci,
         commonName: commonNames[0] || '',
         family: family || '',
@@ -1158,9 +1189,7 @@
     }
     let html = '';
     items.forEach(it=>{
-      let dateStr = '';
-      try{ dateStr = new Date(it.date).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'numeric'}); }
-      catch(e){ dateStr = ''; }
+      const dateStr = formatCarnetDate(it.date);
       html += `
         <div class="carnet-item" data-id="${escapeHtml(it.id)}">
           <div class="carnet-thumb" style="${it.thumbnail ? `background-image:url('${it.thumbnail}')` : ''}"></div>
